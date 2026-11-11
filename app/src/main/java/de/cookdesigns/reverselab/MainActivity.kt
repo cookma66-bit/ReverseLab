@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
         else studio.message = "Erlaube den Mikrofonzugriff in den Einstellungen, um Audio aufzunehmen."
     }
     private val importer = registerForActivityResult(ActivityResultContracts.OpenDocument()) {
-        it?.let(studio::import)
+        it?.let(studio::importAudio)
     }
     private val exporter = registerForActivityResult(ActivityResultContracts.CreateDocument("audio/wav")) {
         it?.let(studio::export)

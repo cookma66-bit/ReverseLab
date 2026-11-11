@@ -129,7 +129,7 @@ internal class Studio(private val app: Application) : AndroidViewModel(app) {
 
     fun openRecording(file: File) = prepare(file.nameWithoutExtension) { file }
 
-    fun import(uri: Uri) {
+    fun importAudio(uri: Uri) {
         prepare("Importiertes Audio") { dir ->
             File(dir, "import").also { file ->
                 requireNotNull(app.contentResolver.openInputStream(uri)).use { input ->
