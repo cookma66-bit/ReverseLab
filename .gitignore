@@ -1,4 +1,5 @@
 .gradle/
+.toolchain/
 **/build/
 local.properties
 .idea/
