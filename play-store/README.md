@@ -18,14 +18,14 @@ Wie klingt deine Stimme rückwärts? Mit ReverseLab nimmst du Audio auf oder imp
 
 - Aufnahme starten, pausieren und fortsetzen. Gespeicherte Aufnahmen erneut öffnen oder löschen.
 - WAV, MP3, M4A und AAC über die Android-Dateiauswahl importieren.
-- Original und Rückwärtsfassung mit Wellenform und Zeitleiste vergleichen.
+- Original und Rückwärtsfassung mit Wellenform und Zeitleiste vergleichen und in Zeitlupe anhören.
 - Rückwärts-Audio als WAV speichern oder direkt teilen.
 
 ReverseLab verarbeitet Audio auf deinem Gerät. Die App funktioniert offline und kommt ohne Werbung und Konto aus.
 
-## Versionshinweise für 1.2
+## Versionshinweise für 1.3
 
-Aufnahmen lassen sich einzeln oder gesammelt löschen. ReverseLab hat ein eigenes App-Icon und eine Datenschutzerklärung in der App.
+„Alle löschen“ steht oberhalb der Aufnahmeliste. Original und Rückwärtsfassung lassen sich mit 0,75× oder 0,5× Tempo anhören.
 
 ## Angaben für die Play Console
 

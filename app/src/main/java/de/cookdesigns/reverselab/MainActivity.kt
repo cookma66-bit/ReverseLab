@@ -12,6 +12,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -145,6 +147,13 @@ private fun StudioScreen(studio: Studio, onRecord: () -> Unit, onImport: () -> U
                             Text(clock(studio.position))
                             Text(clock(studio.duration))
                         }
+                        Text("Wiedergabetempo", style = MaterialTheme.typography.labelLarge)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf(1f to "1×", 0.75f to "0,75×", 0.5f to "0,5×").forEach { (speed, label) ->
+                                FilterChip(studio.speed == speed, { studio.selectSpeed(speed) },
+                                    { Text(label) }, enabled = ready)
+                            }
+                        }
                         Button(onClick = studio::togglePlayback, enabled = ready,
                             modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
                             Text(if (studio.playing) "Pausieren" else "Abspielen")
@@ -221,10 +230,14 @@ private fun StudioScreen(studio: Studio, onRecord: () -> Unit, onImport: () -> U
         } else {
         AlertDialog(onDismissRequest = { library = false }, title = { Text("Gespeicherte Aufnahmen") },
             text = {
-                Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
+                Column {
                     if (recordings.isEmpty()) Text("Es gibt noch keine gespeicherten Aufnahmen.")
                     if (deleteFailed) Text("Einige Aufnahmen konnten nicht gelöscht werden.", color = MaterialTheme.colorScheme.error)
-                    recordings.forEach { file ->
+                    if (recordings.isNotEmpty()) TextButton(onClick = { deleteAll = true }) {
+                        Text("Alle löschen", color = MaterialTheme.colorScheme.error)
+                    }
+                    LazyColumn(Modifier.heightIn(max = 260.dp)) {
+                    items(recordings, key = { it.name }) { file ->
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             TextButton(modifier = Modifier.weight(1f), onClick = {
                                 library = false
@@ -235,14 +248,10 @@ private fun StudioScreen(studio: Studio, onRecord: () -> Unit, onImport: () -> U
                             }
                         }
                     }
+                    }
                 }
             },
-            confirmButton = { TextButton(onClick = { library = false }) { Text("Schließen") } },
-            dismissButton = {
-                if (recordings.isNotEmpty()) TextButton(onClick = { deleteAll = true }) {
-                    Text("Alle löschen", color = MaterialTheme.colorScheme.error)
-                }
-            })
+            confirmButton = { TextButton(onClick = { library = false }) { Text("Schließen") } })
         }
     }
 }

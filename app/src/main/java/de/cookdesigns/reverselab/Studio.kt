@@ -3,6 +3,7 @@ package de.cookdesigns.reverselab
 import android.app.Application
 import android.media.MediaPlayer
 import android.media.MediaRecorder
+import android.media.PlaybackParams
 import android.net.Uri
 import android.os.SystemClock
 import androidx.compose.runtime.getValue
@@ -29,6 +30,8 @@ internal class Studio(private val app: Application) : AndroidViewModel(app) {
         private set
     var playing by mutableStateOf(false)
         private set
+    var speed by mutableStateOf(1f)
+        private set
     var duration by mutableStateOf(0)
         private set
     var position by mutableStateOf(0)
@@ -40,6 +43,7 @@ internal class Studio(private val app: Application) : AndroidViewModel(app) {
     var recordTime by mutableStateOf(0)
         private set
     private var player: MediaPlayer? = null
+    private var appliedSpeed = 1f
     private var recorder: MediaRecorder? = null
     private var recordingFile: File? = null
     private var elapsed = 0L
@@ -231,6 +235,7 @@ internal class Studio(private val app: Application) : AndroidViewModel(app) {
             }
             player?.release()
             player = next
+            appliedSpeed = 1f
             playing = false
             position = 0
             duration = next.duration
@@ -253,8 +258,33 @@ internal class Studio(private val app: Application) : AndroidViewModel(app) {
     }
 
     fun togglePlayback() = playerAction {
-        if (playing) pause() else start()
-        playing = !playing
+        if (playing) {
+            pause()
+            playing = false
+        } else {
+            if (speed == appliedSpeed || !applySpeed(this, speed)) start()
+            playing = true
+        }
+    }
+
+    fun selectSpeed(value: Float) {
+        if (!playing) {
+            speed = value
+            return
+        }
+        playerAction {
+            if (applySpeed(this, value)) speed = value
+        }
+    }
+
+    private fun applySpeed(device: MediaPlayer, value: Float): Boolean = try {
+        device.playbackParams = PlaybackParams().setSpeed(value).setPitch(1f)
+        appliedSpeed = value
+        true
+    } catch (_: IllegalArgumentException) {
+        speed = appliedSpeed
+        message = "Diese Geschwindigkeit ist auf dem Gerät nicht verfügbar."
+        false
     }
 
     fun stop() = playerAction {
