@@ -22,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -100,8 +102,11 @@ private fun StudioScreen(studio: Studio, onRecord: () -> Unit, onImport: () -> U
                 .padding(horizontal = 24.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            Text("ReverseLab", style = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.Black, color = lime)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(painterResource(R.drawable.reverselab_mark), null, Modifier.size(42.dp), tint = lime)
+                Text(stringResource(R.string.app_name), style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Black, color = lime)
+            }
             Text("Audio aufnehmen, umdrehen und teilen", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = panel)) {
                 Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -176,24 +181,45 @@ private fun StudioScreen(studio: Studio, onRecord: () -> Unit, onImport: () -> U
         }
     }
     if (library) {
-        val recordings = remember { studio.recordings() }
+        var recordings by remember { mutableStateOf(studio.recordings()) }
+        var pending by remember { mutableStateOf<java.io.File?>(null) }
+        var deleteFailed by remember { mutableStateOf(false) }
+        val date = remember { java.text.DateFormat.getDateTimeInstance(
+            java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT, Locale.GERMANY) }
+        val selected = pending
+        if (selected != null) {
+            AlertDialog(onDismissRequest = { pending = null },
+                title = { Text("Aufnahme löschen?") },
+                text = { Text("Die Aufnahme vom ${date.format(java.util.Date(selected.lastModified()))} wird dauerhaft gelöscht.") },
+                dismissButton = { TextButton(onClick = { pending = null }) { Text("Abbrechen") } },
+                confirmButton = {
+                    TextButton(onClick = {
+                        deleteFailed = !studio.deleteRecording(selected)
+                        recordings = studio.recordings()
+                        pending = null
+                    }) { Text("Löschen", color = MaterialTheme.colorScheme.error) }
+                })
+        } else {
         AlertDialog(onDismissRequest = { library = false }, title = { Text("Gespeicherte Aufnahmen") },
             text = {
                 Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
                     if (recordings.isEmpty()) Text("Es gibt noch keine gespeicherten Aufnahmen.")
+                    if (deleteFailed) Text("Die Aufnahme konnte nicht gelöscht werden.", color = MaterialTheme.colorScheme.error)
                     recordings.forEach { file ->
-                        TextButton(onClick = {
-                            library = false
-                            studio.openRecording(file)
-                        }) {
-                            val date = java.text.DateFormat.getDateTimeInstance(
-                                java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT, Locale.GERMANY)
-                            Text(date.format(java.util.Date(file.lastModified())))
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(modifier = Modifier.weight(1f), onClick = {
+                                library = false
+                                studio.openRecording(file)
+                            }) { Text(date.format(java.util.Date(file.lastModified()))) }
+                            TextButton(onClick = { pending = file }) {
+                                Text("Löschen", color = MaterialTheme.colorScheme.error)
+                            }
                         }
                     }
                 }
             },
             confirmButton = { TextButton(onClick = { library = false }) { Text("Schließen") } })
+        }
     }
 }
 

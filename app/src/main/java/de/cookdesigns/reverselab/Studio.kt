@@ -16,7 +16,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-internal data class Clip(val title: String, val original: File, val reverse: File, val peaks: FloatArray)
+internal data class Clip(val title: String, val original: File, val reverse: File, val peaks: FloatArray,
+    val recording: File?)
 
 internal class Studio(private val app: Application) : AndroidViewModel(app) {
     var clip by mutableStateOf<Clip?>(null)
@@ -129,6 +130,23 @@ internal class Studio(private val app: Application) : AndroidViewModel(app) {
 
     fun openRecording(file: File) = prepare(file.nameWithoutExtension) { file }
 
+    fun deleteRecording(file: File): Boolean {
+        if (busy || recording || file !in recordings()) return false
+        if (!file.delete()) return false
+        val current = clip
+        if (current?.recording == file) {
+            player?.release()
+            player = null
+            playing = false
+            position = 0
+            duration = 0
+            clip = null
+            current.original.parentFile?.deleteRecursively()
+        }
+        message = "Aufnahme gelöscht."
+        return true
+    }
+
     fun importAudio(uri: Uri) {
         prepare("Importiertes Audio") { dir ->
             File(dir, "import").also { file ->
@@ -158,7 +176,7 @@ internal class Studio(private val app: Application) : AndroidViewModel(app) {
                     val (rate, channels) = decodeAudio(input, pcm)
                     val peaks = writeWaves(pcm, original, reverse, rate, channels)
                     if (input.parentFile == dir) input.delete()
-                    Clip(title, original, reverse, peaks)
+                    Clip(title, original, reverse, peaks, input.takeUnless { it.parentFile == dir })
                 } catch (failure: Exception) {
                     dir.deleteRecursively()
                     throw failure
