@@ -132,6 +132,19 @@ internal class Studio(private val app: Application) : AndroidViewModel(app) {
 
     fun deleteRecording(file: File): Boolean {
         if (busy || recording || file !in recordings()) return false
+        val deleted = removeRecording(file)
+        if (deleted) message = "Aufnahme gelöscht."
+        return deleted
+    }
+
+    fun deleteAllRecordings(): Boolean {
+        if (busy || recording) return false
+        val failed = recordings().count { !removeRecording(it) }
+        message = if (failed == 0) "Alle Aufnahmen gelöscht." else ""
+        return failed == 0
+    }
+
+    private fun removeRecording(file: File): Boolean {
         if (!file.delete()) return false
         val current = clip
         if (current?.recording == file) {
@@ -143,7 +156,6 @@ internal class Studio(private val app: Application) : AndroidViewModel(app) {
             clip = null
             current.original.parentFile?.deleteRecursively()
         }
-        message = "Aufnahme gelöscht."
         return true
     }
 

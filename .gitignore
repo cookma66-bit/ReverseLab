@@ -1,5 +1,13 @@
 .gradle/
+.kotlin/
 .toolchain/
+.release-private/
+*.p12
+*.jks
+hs_err_pid*.log
+/play-store/*.aab
+/play-store/upload-certificate.pem
+/ReverseLab-*-Play-Store.zip
 **/build/
 local.properties
 .idea/

@@ -10,8 +10,18 @@ android {
         applicationId = namespace
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
+    }
+    val uploadStore = providers.environmentVariable("REVERSELAB_UPLOAD_STORE").orNull
+    if (uploadStore != null) {
+        signingConfigs.create("upload") {
+            storeFile = file(uploadStore)
+            storePassword = providers.environmentVariable("REVERSELAB_UPLOAD_PASSWORD").get()
+            keyAlias = "reverselab"
+            keyPassword = storePassword
+        }
+        buildTypes.getByName("release").signingConfig = signingConfigs.getByName("upload")
     }
     buildFeatures { compose = true }
     compileOptions {

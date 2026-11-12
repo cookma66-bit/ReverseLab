@@ -94,6 +94,7 @@ class MainActivity : ComponentActivity() {
 private fun StudioScreen(studio: Studio, onRecord: () -> Unit, onImport: () -> Unit,
     onExport: () -> Unit, onShare: () -> Unit) {
     var library by remember { mutableStateOf(false) }
+    var privacy by remember { mutableStateOf(false) }
     val clip = studio.clip
     val ready = !studio.busy && !studio.recording
     Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
@@ -178,33 +179,51 @@ private fun StudioScreen(studio: Studio, onRecord: () -> Unit, onImport: () -> U
                     }
                 }
             }
+            TextButton(onClick = { privacy = true }, modifier = Modifier.fillMaxWidth()) {
+                Text("Datenschutz")
+            }
         }
+    }
+    if (privacy) {
+        AlertDialog(onDismissRequest = { privacy = false },
+            title = { Text("Datenschutzerklärung") },
+            text = {
+                Text(stringResource(R.string.privacy_policy),
+                    Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()))
+            },
+            confirmButton = { TextButton(onClick = { privacy = false }) { Text("Schließen") } })
     }
     if (library) {
         var recordings by remember { mutableStateOf(studio.recordings()) }
         var pending by remember { mutableStateOf<java.io.File?>(null) }
+        var deleteAll by remember { mutableStateOf(false) }
         var deleteFailed by remember { mutableStateOf(false) }
         val date = remember { java.text.DateFormat.getDateTimeInstance(
             java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT, Locale.GERMANY) }
         val selected = pending
-        if (selected != null) {
-            AlertDialog(onDismissRequest = { pending = null },
-                title = { Text("Aufnahme löschen?") },
-                text = { Text("Die Aufnahme vom ${date.format(java.util.Date(selected.lastModified()))} wird dauerhaft gelöscht.") },
-                dismissButton = { TextButton(onClick = { pending = null }) { Text("Abbrechen") } },
+        if (selected != null || deleteAll) {
+            val dismiss = { pending = null; deleteAll = false }
+            AlertDialog(onDismissRequest = dismiss,
+                title = { Text(if (deleteAll) "Alle Aufnahmen löschen?" else "Aufnahme löschen?") },
+                text = {
+                    Text(if (selected == null) "${recordings.size} gespeicherte Aufnahmen werden dauerhaft gelöscht."
+                        else "Die Aufnahme vom ${date.format(java.util.Date(selected.lastModified()))} wird dauerhaft gelöscht.")
+                },
+                dismissButton = { TextButton(onClick = dismiss) { Text("Abbrechen") } },
                 confirmButton = {
                     TextButton(onClick = {
-                        deleteFailed = !studio.deleteRecording(selected)
+                        deleteFailed = if (selected == null) !studio.deleteAllRecordings()
+                            else !studio.deleteRecording(selected)
                         recordings = studio.recordings()
-                        pending = null
-                    }) { Text("Löschen", color = MaterialTheme.colorScheme.error) }
+                        dismiss()
+                    }) { Text(if (deleteAll) "Alle löschen" else "Löschen", color = MaterialTheme.colorScheme.error) }
                 })
         } else {
         AlertDialog(onDismissRequest = { library = false }, title = { Text("Gespeicherte Aufnahmen") },
             text = {
                 Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
                     if (recordings.isEmpty()) Text("Es gibt noch keine gespeicherten Aufnahmen.")
-                    if (deleteFailed) Text("Die Aufnahme konnte nicht gelöscht werden.", color = MaterialTheme.colorScheme.error)
+                    if (deleteFailed) Text("Einige Aufnahmen konnten nicht gelöscht werden.", color = MaterialTheme.colorScheme.error)
                     recordings.forEach { file ->
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             TextButton(modifier = Modifier.weight(1f), onClick = {
@@ -218,7 +237,12 @@ private fun StudioScreen(studio: Studio, onRecord: () -> Unit, onImport: () -> U
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { library = false }) { Text("Schließen") } })
+            confirmButton = { TextButton(onClick = { library = false }) { Text("Schließen") } },
+            dismissButton = {
+                if (recordings.isNotEmpty()) TextButton(onClick = { deleteAll = true }) {
+                    Text("Alle löschen", color = MaterialTheme.colorScheme.error)
+                }
+            })
         }
     }
 }
